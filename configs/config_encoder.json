@@ -1,0 +1,22 @@
+{
+  "n_parts" : 4,
+  "name_dataset" : ["Abide","HCP", "USZ"],
+  "dataset_similar" : 1,
+  "n_volumes" : 4,
+  "n_transforms" : 2,
+  "temp_fac": 1,
+  "lambda" : 0.5,
+  "n_channels": 1, 
+  "n_classes": 1,
+  "weight_loss": 1,
+  "no_filters": [16, 32, 64, 128, 128, 128],
+  "lr": 0.001,
+  "loss": "global_dminus",
+  "seed": 200,
+  "max_epochs": 10000,
+  "max_steps" : 2500,
+  "datadir": "/scratch/celleaume/img_cropped/",
+  "model": "encoder_pretrain",
+  "resize_size": [192, 192],
+  "save_global_path" : "./trained_models/pretrainings/"
+}

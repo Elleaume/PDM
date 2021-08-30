@@ -1,0 +1,19 @@
+{
+  "batch_size" : 1,
+  "n_parts" : 4,
+  "n_datasets" : 3,
+  "n_volumes" : 1,
+  "n_transforms" : 2,
+  "temp_fac": 1,
+  "n_channels": 1,
+  "n_classes": 4,
+  "weight_loss": 1,
+  "no_filters": [16, 32, 64, 128, 128, 128],
+  "lr": 0.001,
+  "loss": "loccont_loss",
+  "seed": 100,
+  "max_epochs": 100,
+  "datadir": "/scratch/celleaume/img_cropped/",
+  "model": "decoder_pretrain",
+  "resize_size": [256, 256]
+}
