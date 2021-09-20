@@ -30,6 +30,7 @@ from data_augmentation_utils import DataAugmentation
 
 torch.cuda.empty_cache()
 
+# to modify with argpas
 with open('configs/preprocessing_datasets.json') as config_file:
     config_datasets = json.load(config_file)
 with open('configs/seg_unet_Met.json') as config_file:
@@ -37,17 +38,21 @@ with open('configs/seg_unet_Met.json') as config_file:
 with open('configs/config_encoder.json') as config_file:
     config_encoder = json.load(config_file)
 
+# Parameter
 n_vol_train = config_seg['n_vol_train']
 n_vol_val = config_seg['n_vol_val']
 
 lambda_ = 0.6
 
 n_vol_trains = [35]
-seeds = [30, 40, 50]#, 10, 20, 30, 40, 50] 
-options = ['option_11']
-losses_unet = [config_seg['loss_unet']] 
+seeds = [0, 10, 20, 30, 40, 50]
 
+# choose 'baseline' for no pre-traing, option_1 for pre-training modify path of pre-trained encoder line 193
+options = ['option_1']
+losses_unet = [config_seg['loss_unet']] 
+# dataset segmented
 dataset = config_seg['dataset']
+# input size
 resize_size = config_seg['resize_size']
 n_channels = config_seg['n_channels']
 max_epochs = config_seg['max_epochs']
@@ -59,6 +64,9 @@ weight_pretrained = config_seg['weight_pretrained']
 
 save_global_path = config_seg['save_global_path']
 
+
+# Change parameters depending on the dataset for weighted-crossentropy loss
+# total_n_volumes is the total number of volumes available for training to select randomly few of them
 if dataset == 'Abide':
     n_classes = 15
     lab = [1,2,3,4,5,6,7,8,9,10,11,12,13,14]
@@ -81,6 +89,7 @@ elif dataset == 'CIMAS' or dataset == 'ACDC' :
         n_vol_test = 30
         
 if dataset == 'USZ':
+    # if train and validation seperate use n_vol_val 
     n_classes = 2
     lab = [1]
     weights = torch.tensor([0.1, 0.9], dtype=torch.float32)
@@ -89,14 +98,54 @@ if dataset == 'USZ':
     n_vol_test = 21
     n_vol_val = 21
         
+def test_loading(config_datasets, config_seg, dataset, total_n_volumes=24, n_volumes=2, 
+                       split_set = 'train',shuffle = False, idx_vols_val = None, return_idx = False):
+    img_dataset = []
+    mask_dataset = []
+        
+    idx_vols = select_random_volumes(total_n_volumes, n_volumes) 
+    if idx_vols_val != None :
+        assert len(idx_vols_val) + n_volumes <= total_n_volumes
+        while any(item in idx_vols for item in idx_vols_val) :
+            idx_vols = select_random_volumes(total_n_volumes, n_volumes) 
+            
+    count = -1
+    
+    for config_dataset in config_datasets :
+        if config_dataset['Data'] == dataset :  
+            for path in Path(config_dataset['savedir']+ split_set +'/').rglob('subject_*/'):
+                
+                # We want total path not individual path of images
+                if "nii.gz" in str(path) or ".png" in str(path) :
+                    continue
+                count += 1   
+                
+                # Different criterion to stop adding train or test volumes
+                if split_set == 'test':
+                    if count >= n_volumes :
+                        break
+                else :
+                    if count not in idx_vols :
+                        continue
+                        
+                # Add the image and the corresponding mask to the datasets
+                for path_image in path.rglob("img.nii.gz") :
+                    img_dataset.append(path_image)
+                    print(path_image)
+                for path_mask in path.rglob("mask.nii.gz") :
+                    mask_dataset.append(path_mask)
+    
+    return img_dataset, mask_dataset
+
 print('Test set')
-dataset_loader_test = initialize_dataset(config_datasets, config_seg, dataset, total_n_volumes=n_vol_test, 
-                                         n_volumes=n_vol_test, split_set = 'test', 
-                                         shuffle = False)
+img_dataset, mask_dataset = test_loading(config_datasets, config_seg, dataset, total_n_volumes=n_vol_test, 
+                                        n_volumes=n_vol_test, split_set = 'test', 
+                                        shuffle = False)
+
 
 data_aug = DataAugmentation()
 for loss_unet in losses_unet :
-    run = 2
+    run = -1
     for seed in seeds :
         torch.cuda.empty_cache()
         run += 1
@@ -136,99 +185,23 @@ for loss_unet in losses_unet :
        
             for option in options :
                 
-                # baseline 
+                # baseline, no pre-training
                 if option == 'baseline' :
                     pretraining = 'baseline'
                     
-                # Abide pretraining 
+                # USZ pretraining, modify path for different pre-trainings
                 elif option == 'option_1':
                     save_models_pretrain = save_global_path +  "pretrainings" + \
                                            "/global_dminus/" + \
                                             "USZ_12volumesPerBatch/"
+                    # name of the pre-training given in dataframe 
                     pretraining = 'pretrained with USZ (global_dminus)' 
-                elif option == 'option_2':
-                    save_models_pretrain = save_global_path +  "pretrainings" + \
-                                           "/global_d/" + \
-                                            "USZ_12volumesPerBatch/"
-                    pretraining = 'pretrained with USZ (global_d)' 
-                    
-                # Abide pretraining 
-                elif option == 'option_1_2':
-                    save_models_pretrain = save_global_path +  "pretrainings" + \
-                                           "/global_dminus/" + \
-                                            "Abide_12volumesPerBatch/"
-                    pretraining = 'pretrained with Abide (global_dminus)' 
-                elif option == 'option_2_2':
-                    save_models_pretrain = save_global_path +  "pretrainings" + \
-                                           "/global_d/" + \
-                                            "Abide_12volumesPerBatch/"
-                    pretraining = 'pretrained with Abide (global_d)' 
-                    
-                # HCP pretraining 
-                elif option == 'option_1_3':
-                    save_models_pretrain = save_global_path +  "pretrainings" + \
-                                           "/global_dminus/" + \
-                                            "HCP_12volumesPerBatch/"
-                    pretraining = 'pretrained with HCP (global_dminus)' 
-                elif option == 'option_2_3':
-                    save_models_pretrain = save_global_path +  "pretrainings" + \
-                                           "/global_d/" + \
-                                            "HCP_12volumesPerBatch/"
-                    pretraining = 'pretrained with HCP (global_d)'
-                    
-                # HCP and ACDC pretraining
-                elif option == 'option_5':
-                    save_models_pretrain = save_global_path +  "pretrainings" + \
-                                           "/global_d/" + \
-                                            "HCP_Abide_6volumesPerBatch/"
-                    pretraining = 'pretrained with HCP-Abide (global_d)' 
-                elif option == 'option_6':
-                    save_models_pretrain = save_global_path +  "pretrainings" + \
-                                           "/global_dminus/" + \
-                                            "HCP_Abide_6volumesPerBatch/"
-                    pretraining = 'pretrained with HCP-Abide (global_dminus)' 
-                    
-                # 4 datasets in pretraining
-                elif option == 'option_7':
-                    save_models_pretrain = save_global_path + "pretrainings" + \
-                                            "/global_dminus/" + \
-                                            "USZ_MMWHS_Chaos_Medical Decathelon Prostate_3volumesPerBatch/"
-                    pretraining = 'pretrained with USZ-MMWHS-Chaos-MedDecath Prostate (global_dminus)' 
-                elif option == 'option_8':
-                    save_models_pretrain = save_global_path + "pretrainings" + \
-                                            "/global_d/" + \
-                                            "USZ_MMWHS_Chaos_Medical Decathelon Prostate_3volumesPerBatch/"
-                    pretraining = 'pretrained with USZ-MMWHS-Chaos-MedDecath Prostate (global_d)'
-                    
-                # 4 datasets in pretraining
-                elif option == 'option_9':
-                    save_models_pretrain = save_global_path + "pretrainings" + \
-                                            "/global_dminus/" + \
-                                            "ACDC_Abide_Chaos_Medical Decathelon Prostate_3volumesPerBatch/"
-                    pretraining = 'pretrained with ACDC-Abide-Chaos-MedDecath Prostate (global_dminus)' 
-                elif option == 'option_10':
-                    save_models_pretrain = save_global_path + "pretrainings" + \
-                                            "/global_d/" + \
-                                            "ACDC_Abide_Chaos_Medical Decathelon Prostate_3volumesPerBatch/"
-                    pretraining = 'pretrained with ACDC-Abide-Chaos-MedDecath Prostate (global_d)'
-                    
-                # 4 datasets in pretraining
-                elif option == 'option_11':
-                    save_models_pretrain = save_global_path + "pretrainings" + \
-                                            "/global_dminus/" + \
-                                            "ACDC_HCP_Chaos_Medical Decathelon Prostate_3volumesPerBatch/"
-                    pretraining = 'pretrained with HCP-ACDC-Chaos-MedDecath Prostate (global_dminus)' 
-                elif option == 'option_12':
-                    save_models_pretrain = save_global_path + "pretrainings" + \
-                                            "/global_d/" + \
-                                            "ACDC_HCP_Chaos_Medical Decathelon Prostate_3volumesPerBatch/"
-                    pretraining = 'pretrained with HCP-ACDC-Chaos-MedDecath Prostate (global_d)'
-                     
-                    
+                
                 else :
                     print('Error : Unvalid option of baseline / pretraining')
                     break
-            
+                
+                #Initialize the directory for saving
                 save_directory = save_global_path + dataset + '/' + pretraining + '/batch_size_' + str(batch_size)  + \
                 '/'+ loss_unet +'_lr_'+ str(lr) + '_' + str(n_vol_train) + '_vol_in_train_'  + str(n_vol_val)  + \
                  '_vol_in_val' + '/run_' + str(run)
@@ -310,21 +283,20 @@ for loss_unet in losses_unet :
 
                         train_batch_x = (batch_x.float().to(device)).view((-1, n_channels, *resize_size)) 
                         train_batch_y = (batch_y.float().to(device)).view((-1, n_channels, *resize_size))
-                        #print('before augmentation : ', torch.unique(train_batch_y))
                         # perform data augmentation
                         train_batch_x, train_batch_y = data_aug(train_batch_x, train_batch_y)
 
                         train_batch_y = train_batch_y.long().to(device)
                         train_batch_y = train_batch_y.to(device)
-                        #print('after augmentation : ', torch.unique(train_batch_y))
 
                         pred = model(train_batch_x).to(device)
                         pred_labels = F.softmax(pred, dim=1) 
                         pred_labels = torch.argmax(pred_labels, dim=1)
                         
+                        
+                        # change loss_unet in parameter initialization above or in config file
                         if loss_unet == 'crossentropy_loss' :
                             criterion = nn.CrossEntropyLoss(weights.to(device))
-                            #print('train batch ', train_batch_y.shape)
                             #print('pred ',pred.shape)
                             loss = criterion(pred.float().to(device), train_batch_y.squeeze(1)).to(device)
                         elif loss_unet == 'dice_loss' :
@@ -355,7 +327,8 @@ for loss_unet in losses_unet :
                     f1_arr_epoch_train = np.asarray(f1_arr)
                     print('F1 score on train set : ', f1_mean_epoch_train)
                     print("Current train loss: %f" % train_loss) 
-
+                    
+                    # Perform Validation
                     with torch.no_grad():
                         model.eval()
                         batch_val_loss = []
@@ -407,7 +380,7 @@ for loss_unet in losses_unet :
                                                  'train dice': f1_mean_epoch_train, \
                                                  'validation dice': f1_mean_epoch_val}])
 
-                    # Save loss and model at each 50 epochs
+                    # Save loss and model at each 200 epochs
                     if (epoch+1) % 200 == 0 or steps > max_steps :
                         torch.save({
                                 'epoch': epoch,
@@ -445,22 +418,45 @@ for loss_unet in losses_unet :
 
                 losses_min = losses.loc[losses['validation loss'] == losses['validation loss'].min()]
 
+                # Perform Test on each volume indepently
                 with torch.no_grad():
+                    
+                    # Load best trained model
                     best_model.to(device)
                     best_model.eval()
 
-                    print("Epoch {:03d}".format(best_epoch))
                     batch_test_loss = []
                     f1_mean = []
                     f1_arr = []
-                    for id_batch, (batch_x, batch_y) in enumerate(tqdm(dataset_loader_test)):
+                    
+                    for i in range(len(img_dataset)) :
+                        vol_file= img_dataset[i]
+                        mask_file = mask_dataset[i]
+
+                        volume_data = nib.load(vol_file)
+                        mask_data = nib.load(mask_file)
+
+                        affine_volume = volume_data.affine
+                        affine_mask = mask_data.affine
+
+                        volume = volume_data.get_fdata()
+                        mask = mask_data.get_fdata()
+
+                        assert volume.shape == mask.shape
+                        batch_x = torch.from_numpy(volume.transpose(2, 0, 1))
+                        batch_y = torch.from_numpy(mask.transpose(2, 0, 1))
+
                         test_batch_x = (batch_x.float().to(device)).view((-1, n_channels, *resize_size))
                         test_batch_y = (batch_y.long().to(device)).view((-1, n_channels, *resize_size))
 
                         pred = best_model(test_batch_x)
-                        pred_labels = F.softmax(pred, dim=1) 
-                        pred_labels = torch.argmax(pred_labels, dim=1)
+                        pred_labels_baseline = F.softmax(pred, dim=1) 
+                        pred_labels_baseline = torch.argmax(pred_labels_baseline, dim=1)
 
+                        f1_val = compute_f1(test_batch_y.cpu(), pred_labels_baseline.cpu(), lab)
+                        f1_mean.append(np.mean(f1_val))
+                        f1_arr.append(f1_val)
+                        baseline_mean_score = np.mean(f1_val)
 
                         if loss_unet == 'crossentropy_loss' :
                             criterion = nn.CrossEntropyLoss(weights.to(device))
@@ -478,29 +474,36 @@ for loss_unet in losses_unet :
 
                         batch_test_loss.append(loss.item())
 
-                        f1_val = compute_f1(test_batch_y.cpu(), pred_labels.cpu(), lab)
-                        f1_mean.append(np.mean(f1_val))
-                        f1_arr.append(f1_val)
-
                     test_loss = statistics.mean(batch_test_loss)
                     f1_mean_epoch = np.mean(f1_mean)
                     f1_arr_epoch = np.asarray(f1_arr)
-                    print(f1_arr_epoch)
-                    print('F1 score on test set : ', f1_mean_epoch)
 
+                infile = open(save_models_path+ '/results.pkl','rb')
+                results_BN = pickle.load(infile)
+                
+                # Initialization of the dataframe for results
+                results = pd.DataFrame(columns = ['model', 'n vol train', 'lr', 'loss unet',
+                                                                  'train F1', 'validation F1', 'test F1', 
+                                                                  'train loss', 'validation loss', 'test loss',
+                                                                  'best epoch'])
                 # Save results for the best epoch
                 results = results.append([{'model': pretraining, 'n vol train': n_vol_train, 'lr' : lr, 
-                                           'loss unet' : loss_unet, 'batch_size' : batch_size,
+                                           'loss unet' : loss_unet, 
+                                           'batch_size' : batch_size,
                                            'train F1': losses_min['train dice'].item(), 
                                            'validation F1' : losses_min['validation dice'].item(), 
                                            'test F1' : f1_mean_epoch, 
                                            'train loss' : losses_min['train loss'].item(), 
                                            'validation loss' : losses_min['validation loss'].item(), 
-                                           'test loss' : test_loss, 'best epoch' : best_epoch, 
+                                           'test loss' : test_loss,
+                                           'best epoch' : best_epoch, 
                                            'f1_arr' : np.mean(f1_arr_epoch, axis = 0)
                                            }])
 
+                
+                # Save results
                 results.to_pickle(save_directory + "/results.pkl")
+                
                 print('Done!')
                 print('Final epoch : ', epoch)
                 print('Final step : ', steps) 
