@@ -28,24 +28,38 @@ Tensorflow 1.12.0,<br/>
 rest of the requirements are mentioned in the "requirements.txt" file. <br/>
 
 I)  To clone the git repository.<br/>
-git clone https://github.com/krishnabits001/domain_specific_dl.git <br/>
+git clone https://github.com/Elleaume/PDM.git <br/>
 
 II) Install python, required packages and tensorflow.<br/>
 Then, install python packages required using below command or the packages mentioned in the file.<br/>
 pip install -r requirements.txt <br/>
 
-To install tensorflow <br/>
-pip install tensorflow-gpu=1.12.0 <br/>
-
 III) Dataset download.<br/>
+
 To download the ACDC Cardiac dataset, check the website :<br/>
 https://www.creatis.insa-lyon.fr/Challenge/acdc. <br/>
+
+To download the MMWHS Cardiac dataset, check the website :<br/>
+http://www.sdspeople.fudan.edu.cn/zhuangxiahai/0/mmwhs/
+
+To download the CIMAS Cardiac dataset, check the website :<br/>
+http://www.cardiacatlas.org/challenges/lv-segmentation-challenge/
+
+To download the ABIDE Brain dataset, check the website :<br/>
+http://fcon_1000.projects.nitrc.org/indi/abide/
+
+To download the HCP Brain dataset, check the website :<br/> 
+https://www.humanconnectome.org/study/hcp-young-adult/data-releases
 
 To download the Medical Decathlon Prostate dataset, check the website :<br/>
 http://medicaldecathlon.com/
 
-To download the MMWHS Cardiac dataset, check the website :<br/>
-http://www.sdspeople.fudan.edu.cn/zhuangxiahai/0/mmwhs/
+To download the CHAOS Abdomens dataset, check the website :<br/> 
+https://chaos.grand-challenge.org/Data/
+
+The USZ Tumor/Metastases dataset is private.
+
+
  
 All the images were bias corrected using N4 algorithm with a threshold value of 0.001. For more details, refer to the "N4_bias_correction.py" file in scripts.<br/>
 Image and label pairs are re-sampled (to chosen target resolution) and cropped/zero-padded to a fixed size using "create_cropped_imgs.py" file. <br/>
@@ -77,17 +91,3 @@ Example for ACDC dataset:<br/>
 2) data_cfg_acdc.py <br/>
 --> contains an example of data config details where one can set the patient ids which they want to use as train, validation and test images.<br/>
 
-
-**Current Bibtex citation:** 
-
-	@article{chaitanya2020contrastive,
-  	title={Contrastive learning of global and local features for medical image segmentation with limited annotations},
-  	author={Chaitanya, Krishna and Erdil, Ertunc and Karani, Neerav and Konukoglu, Ender},
-  	journal={arXiv preprint arXiv:2006.10511},
-  	year={2020}
-	}
-
-
-**NeurIPS Bibtex citation:** <br/>
-Awaiting for Proceedings to be published
-<br/>
