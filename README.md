@@ -1,17 +1,25 @@
-**Contrastive learning of global and local features for medical image segmentation with limited annotations** <br/>
+**Learning a Universal Encoder for Medical Dataset using Self-Supervised Contrastive Learning** <br/>
 
-The code is for the article "Contrastive learning of global and local features for medical image segmentation with limited annotations" which got accepted as an Oral presentation at NeurIPS 2020 (34th international conference on Neural Information Processing Systems). With the proposed pre-training method using Contrastive learning, we get competitive segmentation performance with just 2 labeled training volumes compared to a benchmark that is trained with many labeled volumes.<br/>
-https://arxiv.org/abs/2006.10511 <br/>
+The code is for the Master Thesis "Learning a Universal Encoder for Medical Dataset using Self-Supervised Contrastive Learning". 
+This project aims to learn a universal encoder for medical images using Self-Supervised learning that could be used with transfer learning for specific segmentation tasks using limited amount of annotations. To do so, several encoders were pre-trained using Contrastive learning and several datasets.
+
+The assessment of the quality of the transfer learning was carried as follows. 
+First, the encoder was initialized with a pre-trained network that has been self-trained with only images of the downstream-task. Each segmentation task was thus fine-tuned with its specific pre-trained encoder.
+Then the network was initialized with an anatomy-specific encoder that was pre-trained with multiple datasets of the same type of anatomy, including the target one. In order to study whether a more general encoder can learn global representations and be useful for the segmentation of variable anatomies, the network was then initialized with an encoder that has been pre-trained with 4 different datasets each presenting a different anatomy or modality and including the target dataset. Finally, the fine-tuning was done on an encoder that was trained with 4 different datasets presenting different anatomies and excluding the target dataset to assess transferability of the universal encoder.
 
 **Observations / Conclusions:** <br/>
-1) For medical image segmentation, the proposed contrastive pre-training strategy incorporating domain knowledge present naturally across medical volumes yields better performance than baseline, other pre-training methods, semi-supervised, and data augmentation methods.
-2) Proposed local contrastive loss, an extension of global loss, provides an additional boost in performance by learning distinctive local-level representation to distinguish between neighbouring regions.
-3) The proposed pre-training strategy is complementary to semi-supervised and data augmentation methods. Combining them yields a further boost in accuracy.
+1) On each dataset, this pre-training method showed a consistent benefit on segmentations tasks. 
+2) Enriching the pre-training images by several datasets of the same or different anatomies led to an improvement of the results on the secondary tasks compared to the use of an isolated dataset. 
+3) In addition, the transferability of these encoders was tested on datasets different from those seen in pre-training to assess the agility of the encoders to generalize the learned representations. 
+4) Universal encoders have shown greater ability to match the performance of encoders trained with target datasets and better generalization capabilities. 
+5) As a last step, the method was applied to a more tedious task, the segmentation of brain lesions. The experiments, which are currently incomplete, shown encouraging results for the improvement of the segmentation of brain tumors and metastases.
 
 **Authors:** <br/>
+Camille Elleaume ([email](mailto:ca.elleaume@gmail.com)),<br/>
+
+**Supervisors:** <br/>
 Krishna Chaitanya ([email](mailto:krishna.chaitanya@vision.ee.ethz.ch)),<br/>
 Ertunc Erdil,<br/>
-Neerav Karani,<br/>
 Ender Konukoglu.<br/>
 
 **Requirements:** <br/>
