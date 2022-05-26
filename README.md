@@ -68,7 +68,7 @@ Pay attention to the save directory path in each of those file to keep track of 
 V) Preprocessing<br/>
 Preprocessing is performed with the Preprocessing_with_mask.ipynb Jupyter notebook.<br/>
 All the images were bias corrected using N4 algorithm with a threshold value of 0.001. <br/>
-Image and label pairs are re-sampled (to chosen target resolution) and cropped/zero-padded to a fixed size using "create_cropped_imgs.py" file. <br/>
+Image and label pairs are re-sampled (to chosen target resolution) and cropped/zero-padded to a fixed size. <br/>
 If you want to include new datasets you have to fill in their parameters in the preprocessing_datasets.json file.<br/>
 
 VI) Pre-train the models <br/>
