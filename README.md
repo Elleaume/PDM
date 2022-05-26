@@ -60,24 +60,24 @@ https://chaos.grand-challenge.org/Data/
 The USZ Tumor/Metastases dataset is private.<br/> 
 
 IV) Complete config files<br/>
-The file preprocessing_datasets.json contains parameter for the preprocessing of each dataset
-The config_encoder.json file contains the information needed for pre-training. It's important to choose here which dataset will be use for pre-training, how many partitions and with which loss. The valid dataset names in this list must be included among the datasets listed in the preprocessing_datasets.json file. The path of the images file must also be indicated in this file.
-The seg_unet_\*.json file contains the parameters for the network architecture depending on the dataset segmented. 
-Pay attention to the save directory path in each of those file to keep track of your results. 
+The file preprocessing_datasets.json contains parameter for the preprocessing of each dataset<br/>
+The config_encoder.json file contains the information needed for pre-training. It's important to choose here which dataset will be use for pre-training, how many partitions and with which loss. The valid dataset names in this list must be included among the datasets listed in the preprocessing_datasets.json file. The path of the images file must also be indicated in this file.<br/>
+The seg_unet_\*.json file contains the parameters for the network architecture depending on the dataset segmented. <br/>
+Pay attention to the save directory path in each of those file to keep track of your results. <br/>
 
 V) Preprocessing<br/>
-Preprocessing is performed with the Preprocessing_with_mask.ipynb Jupyter notebook.
-All the images were bias corrected using N4 algorithm with a threshold value of 0.001. 
-Image and label pairs are re-sampled (to chosen target resolution) and cropped/zero-padded to a fixed size using "create_cropped_imgs.py" file. 
+Preprocessing is performed with the Preprocessing_with_mask.ipynb Jupyter notebook.<br/>
+All the images were bias corrected using N4 algorithm with a threshold value of 0.001. <br/>
+Image and label pairs are re-sampled (to chosen target resolution) and cropped/zero-padded to a fixed size using "create_cropped_imgs.py" file. <br/>
 If you want to include new datasets you have to fill in their parameters in the preprocessing_datasets.json file.<br/>
 
 VI) Pre-train the models <br/>
-Once the config files have been completed, pre-train the model by running the pretraining_FullTrainSet.py file 
+Once the config files have been completed, pre-train the model by running the pretraining_FullTrainSet.py file <br/>
 Use the command line : python3 pretraining_FullTrainSet.py --config configs/encoder_pretrain.json
 
 IV) Train the models.<br/>
 Train the model by running the training.py file. Chose carefully the config file used line 36. This file will determine which dataste is segmented.
 Use the command line : python3 training.py --config configs/encoder_pretrain.json
 
-For more information you can refer to the pdf report: MasterThesis_CamilleElleaume.pdf
+For more information you can refer to the pdf report: MasterThesis_CamilleElleaume.pdf<br/>
 All results presented can be reproduced with results\*.ipynb files.
