@@ -57,37 +57,27 @@ http://medicaldecathlon.com/
 To download the CHAOS Abdomens dataset, check the website :<br/> 
 https://chaos.grand-challenge.org/Data/
 
-The USZ Tumor/Metastases dataset is private.
+The USZ Tumor/Metastases dataset is private.<br/> 
 
+IV) Complete config files<br/>
+The file preprocessing_datasets.json contains parameter for the preprocessing of each dataset
+The config_encoder.json file contains the information needed for pre-training. It's important to choose here which dataset will be use for pre-training, how many partitions and with which loss. The valid dataset names in this list must be included among the datasets listed in the preprocessing_datasets.json file. The path of the images file must also be indicated in this file.
+The seg_unet_\*.json file contains the parameters for the network architecture depending on the dataset segmented. 
+Pay attention to the save directory path in each of those file to keep track of your results. 
 
- 
-All the images were bias corrected using N4 algorithm with a threshold value of 0.001. For more details, refer to the "N4_bias_correction.py" file in scripts.<br/>
-Image and label pairs are re-sampled (to chosen target resolution) and cropped/zero-padded to a fixed size using "create_cropped_imgs.py" file. <br/>
+V) Preprocessing<br/>
+Preprocessing is performed with the Preprocessing_with_mask.ipynb Jupyter notebook.
+All the images were bias corrected using N4 algorithm with a threshold value of 0.001. 
+Image and label pairs are re-sampled (to chosen target resolution) and cropped/zero-padded to a fixed size using "create_cropped_imgs.py" file. 
+If you want to include new datasets you have to fill in their parameters in the preprocessing_datasets.json file.<br/>
+
+VI) Pre-train the models <br/>
+Once the config files have been completed, pre-train the model by running the pretraining_FullTrainSet.py file 
+Use the command line : python3 pretraining_FullTrainSet.py --config configs/encoder_pretrain.json
 
 IV) Train the models.<br/>
-Below commands are an example for ACDC dataset.<br/> 
-The models need to be trained sequentially as follows (check "train_model/pretrain_and_fine_tune_script.sh" script for commands)<br/>
-Steps :<br/>
-1) Step 1: To pre-train the encoder with global loss by incorporating proposed domain knowledge when defining positive and negative pairs.<br/>
-cd train_model/ <br/>
-python pretr_encoder_global_contrastive_loss.py --dataset=acdc --no_of_tr_imgs=tr52 --global_loss_exp_no=2 --n_parts=4 --temp_fac=0.1 --bt_size=12
+Train the model by running the training.py file. Chose carefully the config file used line 36. This file will determine which dataste is segmented.
+Use the command line : python3 training.py --config configs/encoder_pretrain.json
 
-2) Step 2: After step 1, we pre-train the decoder with proposed local loss to aid segmentation task by learning distinctive local-level representations.<br/>
-python pretr_decoder_local_contrastive_loss.py --dataset=acdc --no_of_tr_imgs=tr52 --pretr_no_of_tr_imgs=tr52 --local_reg_size=1 --no_of_local_regions=13 --temp_fac=0.1 --global_loss_exp_no=2 --local_loss_exp_no=0 --no_of_decoder_blocks=3 --no_of_neg_local_regions=5 --bt_size=12
-
-3) Step 3: We use the pre-trained encoder and decoder weights as initialization and fine-tune to segmentation task using limited annotations.<br/>
-python ft_pretr_encoder_decoder_net_local_loss.py --dataset=acdc --pretr_no_of_tr_imgs=tr52 --local_reg_size=1 --no_of_local_regions=13 --temp_fac=0.1 --global_loss_exp_no=2 --local_loss_exp_no=0 --no_of_decoder_blocks=3 --no_of_neg_local_regions=5 --no_of_tr_imgs=tr1 --comb_tr_imgs=c1 --ver=0 
-
-To train the baseline with affine and random deformations & intensity transformations for comparison, use the below code file.<br/>
-cd train_model/ <br/>
-python tr_baseline.py --dataset=acdc --no_of_tr_imgs=tr1 --comb_tr_imgs=c1 --ver=0
-
-V) Config files contents.<br/>
-One can modify the contents of the below 2 config files to run the required experiments.<br/>
-experiment_init directory contains 2 files.<br/>
-Example for ACDC dataset:<br/>
-1) init_acdc.py <br/>
---> contains the config details like target resolution, image dimensions, data path where the dataset is stored and path to save the trained models.<br/>
-2) data_cfg_acdc.py <br/>
---> contains an example of data config details where one can set the patient ids which they want to use as train, validation and test images.<br/>
-
+For more information you can refer to the pdf report: MasterThesis_CamilleElleaume.pdf
+All results presented can be reproduced with results\*.ipynb files.
